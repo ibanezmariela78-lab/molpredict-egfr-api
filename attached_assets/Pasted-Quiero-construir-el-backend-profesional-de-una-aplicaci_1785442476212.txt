@@ -1,0 +1,517 @@
+Quiero construir el backend profesional de una aplicación llamada “MolPredict EGFR”.
+
+IMPORTANTE
+
+En esta primera etapa quiero crear únicamente una API backend.
+
+No crear frontend.
+No crear páginas React.
+No crear autenticación.
+No crear base de datos.
+No integrar AWS todavía.
+No entrenar todavía un modelo QSAR real.
+
+El frontend ya fue creado externamente en Lovable y posteriormente consumirá esta API.
+
+OBJETIVO
+
+Crear una API pública en Python con FastAPI para:
+
+- validar estructuras químicas mediante SMILES;
+- canonicalizar SMILES;
+- generar representaciones moleculares 2D;
+- calcular descriptores fisicoquímicos reales mediante RDKit;
+- evaluar criterios orientativos de Lipinski;
+- devolver una predicción demostrativa de actividad frente a EGFR;
+- consultar moléculas similares de un pequeño dataset local demostrativo.
+
+La validación molecular y los descriptores deben ser reales y calculados con RDKit.
+
+La predicción de actividad todavía será demostrativa y debe estar identificada claramente como no validada científicamente.
+
+TECNOLOGÍAS
+
+Usar:
+
+- Python 3.11 o una versión estable compatible;
+- FastAPI;
+- Uvicorn;
+- Pydantic;
+- RDKit;
+- Pandas;
+- NumPy;
+- Scikit-learn;
+- Joblib;
+- python-dotenv;
+- pytest;
+- httpx para pruebas;
+- logging estándar de Python.
+
+No utilizar Flask.
+No utilizar Streamlit.
+No generar una aplicación visual.
+
+ESTRUCTURA DEL PROYECTO
+
+Crear una estructura modular:
+
+app/
+  __init__.py
+  main.py
+
+  api/
+    __init__.py
+    routes_health.py
+    routes_molecules.py
+    routes_predictions.py
+    routes_similarity.py
+    routes_model.py
+
+  core/
+    __init__.py
+    config.py
+    logging_config.py
+    exceptions.py
+
+  schemas/
+    __init__.py
+    molecule.py
+    prediction.py
+    similarity.py
+    model.py
+
+  services/
+    __init__.py
+    chemistry_service.py
+    descriptor_service.py
+    rendering_service.py
+    prediction_service.py
+    similarity_service.py
+
+data/
+  demo_compounds.json
+
+models/
+  README.md
+
+tests/
+  test_health.py
+  test_validation.py
+  test_descriptors.py
+  test_prediction.py
+  test_similarity.py
+
+scripts/
+  test_api.py
+
+requirements.txt
+.env.example
+.gitignore
+README.md
+
+CONFIGURACIÓN GENERAL
+
+La API debe:
+
+- escuchar en 0.0.0.0;
+- utilizar el puerto definido por la variable de entorno PORT;
+- usar 8000 como puerto por defecto;
+- incluir documentación Swagger en /docs;
+- incluir documentación ReDoc en /redoc;
+- habilitar CORS mediante una variable CORS_ORIGINS;
+- permitir temporalmente "*" solo en modo desarrollo;
+- devolver JSON consistente;
+- agregar manejo global de errores;
+- agregar logs comprensibles;
+- validar todas las entradas con Pydantic.
+
+Crear estas variables en .env.example:
+
+APP_NAME=MolPredict EGFR API
+APP_ENV=development
+PORT=8000
+CORS_ORIGINS=*
+DEMO_MODE=true
+MODEL_VERSION=qsar-demo-v0.1
+
+ENDPOINT 1
+
+GET /health
+
+Debe responder:
+
+{
+  "status": "ok",
+  "service": "molpredict-egfr-api",
+  "environment": "development",
+  "demo_mode": true,
+  "rdkit_available": true,
+  "version": "0.1.0"
+}
+
+Comprobar realmente si RDKit está disponible.
+
+ENDPOINT 2
+
+POST /api/v1/molecules/validate
+
+Entrada:
+
+{
+  "smiles": "COc1ccc2ncnc(Nc3ccc(F)c(Cl)c3)c2c1"
+}
+
+Validar el SMILES utilizando RDKit.
+
+Si es válido devolver:
+
+{
+  "valid": true,
+  "input_smiles": "",
+  "canonical_smiles": "",
+  "molecular_formula": "",
+  "atom_count": 0,
+  "heavy_atom_count": 0,
+  "message": "Estructura molecular válida"
+}
+
+La fórmula molecular debe tener formato químico correcto, por ejemplo:
+
+C22H24ClFN4O3
+
+No escribir incorrectamente CL en lugar de Cl.
+
+Si es inválido, devolver un error HTTP 422 claro y seguro.
+
+ENDPOINT 3
+
+POST /api/v1/molecules/descriptors
+
+Entrada:
+
+{
+  "smiles": ""
+}
+
+Calcular realmente con RDKit:
+
+- molecular_weight;
+- logp;
+- tpsa;
+- h_bond_donors;
+- h_bond_acceptors;
+- rotatable_bonds;
+- aromatic_rings;
+- fraction_csp3;
+- formal_charge;
+- atom_count;
+- heavy_atom_count;
+- ring_count;
+- lipinski_violations.
+
+Devolver también una evaluación de Lipinski:
+
+{
+  "criteria": [
+    {
+      "name": "Peso molecular",
+      "value": 0,
+      "threshold": "<= 500",
+      "passes": true
+    }
+  ],
+  "passed_count": 0,
+  "total_count": 5,
+  "summary": ""
+}
+
+Utilizar como criterios demostrativos:
+
+- peso molecular <= 500;
+- LogP <= 5;
+- donantes de hidrógeno <= 5;
+- aceptores de hidrógeno <= 10;
+- enlaces rotables <= 5.
+
+Aclarar en la respuesta que estos criterios son orientativos.
+
+ENDPOINT 4
+
+POST /api/v1/molecules/render
+
+Entrada:
+
+{
+  "smiles": "",
+  "width": 500,
+  "height": 350
+}
+
+Generar con RDKit una estructura molecular 2D.
+
+Preferentemente devolver SVG generado por el servidor.
+
+La estructura debe:
+
+- tener enlaces químicos;
+- mostrar etiquetas de heteroátomos;
+- mantener buena legibilidad;
+- tener fondo transparente o blanco;
+- estar centrada.
+
+No devolver una red abstracta ni una imagen mock.
+
+Validar los límites de width y height para evitar solicitudes excesivas.
+
+ENDPOINT 5
+
+POST /api/v1/predictions/egfr
+
+Entrada:
+
+{
+  "smiles": ""
+}
+
+Primero:
+
+- validar el SMILES;
+- canonicalizarlo;
+- calcular descriptores;
+- calcular Morgan Fingerprint.
+
+Todavía no existe un modelo entrenado real.
+
+Por lo tanto, la respuesta debe ser demostrativa y devolver obligatoriamente:
+
+{
+  "canonical_smiles": "",
+  "pic50_prediction": 7.21,
+  "ic50_nm_prediction": 61.7,
+  "activity_label": "Actividad potencial alta",
+  "confidence": "medium",
+  "prediction_mode": "demo",
+  "scientifically_validated": false,
+  "model_version": "qsar-demo-v0.1",
+  "descriptors": {},
+  "applicability_domain": {
+    "inside_domain": true,
+    "maximum_similarity": 0.78,
+    "confidence": "medium",
+    "method": "demo"
+  },
+  "favorable_factors": [],
+  "unfavorable_factors": [],
+  "disclaimer": ""
+}
+
+REGLAS PARA LA PREDICCIÓN DEMO
+
+- Debe ser reproducible.
+- No usar números aleatorios diferentes en cada solicitud.
+- Puede utilizar valores demostrativos predefinidos para los compuestos incluidos en demo_compounds.json.
+- Para otros compuestos, utilizar una respuesta demostrativa determinista basada en el SMILES canónico.
+- No presentar esa lógica como un modelo científico.
+- No llamarla machine learning real.
+- Indicar siempre prediction_mode="demo".
+- Indicar siempre scientifically_validated=false.
+- No inventar métricas de rendimiento.
+
+Usar este disclaimer:
+
+“Predicción demostrativa no validada científicamente. No reemplaza ensayos químicos, biológicos, toxicológicos, preclínicos ni clínicos.”
+
+La conversión matemática entre pIC50 e IC50 debe ser consistente.
+
+Si se fija una pIC50, calcular correctamente la IC50 correspondiente.
+
+ENDPOINT 6
+
+POST /api/v1/similarity/search
+
+Entrada:
+
+{
+  "smiles": "",
+  "limit": 5
+}
+
+Crear un pequeño archivo data/demo_compounds.json con los siguientes nombres:
+
+- Gefitinib;
+- Erlotinib;
+- Lapatinib;
+- Osimertinib;
+- Afatinib.
+
+Cada registro debe tener:
+
+- id;
+- name;
+- smiles;
+- experimental_pic50_demo;
+- data_mode.
+
+Los valores de actividad deben identificarse como ilustrativos si no provienen todavía de una fuente real verificada.
+
+Calcular similitud molecular real mediante:
+
+- Morgan Fingerprints;
+- radio 2;
+- 2048 bits;
+- similitud de Tanimoto.
+
+Ordenar de mayor a menor similitud.
+
+Devolver:
+
+- name;
+- canonical_smiles;
+- similarity;
+- experimental_pic50_demo;
+- data_mode;
+- molecular_formula.
+
+No afirmar que los valores de pIC50 son experimentales reales.
+
+ENDPOINT 7
+
+GET /api/v1/models/current
+
+Responder:
+
+{
+  "name": "QSAR Ensemble EGFR",
+  "version": "qsar-demo-v0.1",
+  "status": "demo",
+  "task": "regression",
+  "target": "EGFR",
+  "endpoint": "pIC50",
+  "trained": false,
+  "validated": false,
+  "message": "El modelo QSAR real todavía no fue entrenado."
+}
+
+ENDPOINT 8
+
+GET /api/v1/models/metrics
+
+No inventar métricas.
+
+Responder:
+
+{
+  "available": false,
+  "metrics": null,
+  "message": "Las métricas estarán disponibles después del entrenamiento y validación del modelo."
+}
+
+ENDPOINT 9
+
+GET /api/v1/dataset/summary
+
+Responder únicamente con información del dataset demostrativo local:
+
+- cantidad de compuestos;
+- nombres;
+- data_mode;
+- fuente;
+- fecha de generación.
+
+No afirmar que ya se descargaron datos de ChEMBL.
+
+SEGURIDAD
+
+Implementar:
+
+- validación estricta del largo del SMILES;
+- límite razonable de caracteres;
+- validación de dimensiones para render;
+- manejo seguro de excepciones de RDKit;
+- CORS configurable;
+- no usar eval;
+- no ejecutar contenido enviado por usuarios;
+- no exponer variables de entorno;
+- no guardar los SMILES enviados por usuarios;
+- no agregar claves secretas al repositorio;
+- sanitizar mensajes de error.
+
+TESTS
+
+Crear pruebas para:
+
+1. GET /health.
+2. SMILES válido.
+3. SMILES inválido.
+4. Canonicalización.
+5. Fórmula molecular.
+6. Cálculo de descriptores.
+7. Renderizado SVG.
+8. Predicción en modo demo.
+9. Consistencia matemática entre pIC50 e IC50.
+10. Similitud ordenada.
+11. Métricas no disponibles.
+12. Dataset demostrativo.
+
+Agregar al menos un SMILES válido sencillo:
+
+CCO
+
+Y un SMILES inválido:
+
+esto-no-es-un-smiles
+
+README
+
+Crear un README profesional en español que explique:
+
+- objetivo del backend;
+- estado actual;
+- funciones reales;
+- funciones demostrativas;
+- instalación;
+- ejecución;
+- endpoints;
+- ejemplos de curl;
+- tests;
+- variables de entorno;
+- limitaciones;
+- conexión futura con Lovable;
+- roadmap hacia el modelo QSAR real;
+- disclaimer científico.
+
+Aclarar expresamente:
+
+Funciones reales actuales:
+- validación de SMILES;
+- canonicalización;
+- fórmula molecular;
+- descriptores;
+- Lipinski;
+- estructura 2D;
+- similitud Tanimoto.
+
+Funciones demostrativas actuales:
+- pIC50;
+- IC50;
+- confianza;
+- factores explicativos;
+- dominio de aplicabilidad.
+
+EJECUCIÓN
+
+Configurar el comando de ejecución para Replit:
+
+uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+
+Al terminar:
+
+1. instalar todas las dependencias;
+2. ejecutar los tests;
+3. iniciar el servidor;
+4. comprobar GET /health;
+5. comprobar /docs;
+6. corregir cualquier error;
+7. mostrar un resumen de los archivos creados.
+
+No declarar el proyecto terminado hasta que la API esté funcionando en Preview.

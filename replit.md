@@ -1,45 +1,62 @@
-# [Project name]
+# MolPredict EGFR API
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Backend Python/FastAPI para validación molecular, cálculo de descriptores fisicoquímicos y predicción demostrativa de actividad frente a EGFR. El frontend externo (Lovable) consumirá esta API.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- **Python API (principal):** Workflow `MolPredict EGFR API` — `uvicorn app.main:app --host 0.0.0.0 --port 8000` (desde `artifacts/molpredict-api/`)
+- **Tests:** `cd artifacts/molpredict-api && python3 -m pytest tests/ -v`
+- **Prueba manual:** `python3 artifacts/molpredict-api/scripts/test_api.py http://localhost:8000`
+- **Swagger UI:** `http://localhost:8000/docs`
+- **ReDoc:** `http://localhost:8000/redoc`
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Python 3.13 + FastAPI + Uvicorn
+- RDKit (validación SMILES, descriptores, SVG 2D, Morgan FP + Tanimoto)
+- Pydantic v2 para validación de entradas/salidas
+- pytest + httpx + pytest-asyncio para tests
+- Sin base de datos (stateless por diseño en esta fase)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+```
+artifacts/molpredict-api/
+  app/
+    main.py              ← punto de entrada FastAPI
+    core/config.py       ← Settings desde .env
+    core/exceptions.py   ← manejadores globales de errores
+    api/routes_*.py      ← endpoints por dominio
+    services/            ← lógica RDKit real + predicción demo
+    schemas/             ← modelos Pydantic
+  data/demo_compounds.json  ← 5 inhibidores EGFR demo
+  models/README.md          ← placeholder para modelo QSAR futuro
+  tests/                    ← 33 tests (todos pasan)
+```
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Predicción demostrativa determinista:** hash SHA-256 del SMILES canónico → pIC50 en [5.5–9.0]; sin aleatoriedad, reproducible.
+- **pIC50 ↔ IC50(nM):** fórmula exacta `IC50_nM = 10^(9 - pIC50)`; validada en tests de consistencia.
+- **Node.js API Server movido a `/api-nodejs`:** el template Node.js original ocupaba `/api`; se movió para que las rutas `/api/v1/...` de Python funcionen sin conflicto.
+- **Sin autenticación en esta fase:** por diseño; CORS permisivo (`*`) en development.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+API pública para: validar/canonicalizar SMILES, calcular descriptores RDKit (peso molecular, LogP, TPSA, Lipinski), renderizar estructuras 2D SVG, buscar similitud Tanimoto (Morgan FP), y predecir actividad demostrativa frente a EGFR.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Solo backend Python en esta etapa; no crear frontend, auth, ni DB.
+- Predicciones siempre marcadas como demostrativas (`scientifically_validated=false`).
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- RDKit requiere `expat` como dependencia de sistema (Nix). Si se reinstala el entorno, correr: `installSystemDependencies({ packages: ["expat"] })`.
+- `Chem` se importa desde `rdkit`, NO desde `rdkit.Chem`: `from rdkit import Chem`.
+- El workflow usa `cd artifacts/molpredict-api &&` antes de uvicorn; Python carga los módulos con `app.*` relativo a ese directorio.
 
 ## Pointers
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- Ver `artifacts/molpredict-api/README.md` para documentación completa en español
+- Ver `artifacts/molpredict-api/models/README.md` para el roadmap hacia el modelo QSAR real
