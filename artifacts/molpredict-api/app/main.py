@@ -63,6 +63,17 @@ app.add_middleware(
 # ── Manejadores globales de excepciones ─────────────────────────────────────
 register_exception_handlers(app)
 
+# ── Ruta raíz ───────────────────────────────────────────────────────────────
+@app.get("/", tags=["Root"])
+async def root() -> dict:
+    return {
+        "service": "MolPredict EGFR API",
+        "status": "running",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 # ── Routers ─────────────────────────────────────────────────────────────────
 app.include_router(routes_health.router)
 
