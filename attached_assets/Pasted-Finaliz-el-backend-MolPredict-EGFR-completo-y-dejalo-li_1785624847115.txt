@@ -1,0 +1,623 @@
+Finalizá el backend MolPredict EGFR completo y dejalo listo para conectar con el frontend de Lovable y publicar en Replit.
+
+Antes de modificar archivos, revisá el estado actual del repositorio y continuá desde la estructura existente. No reconstruyas el proyecto desde cero.
+
+==================================================
+CONTEXTO ACTUAL
+==================================================
+
+El backend principal está en:
+
+artifacts/molpredict-api
+
+La aplicación es FastAPI con RDKit.
+
+El artefacto que Replit debe utilizar para ejecutar y mostrar la API es:
+
+artifacts/api-server
+
+Su configuración está en:
+
+artifacts/api-server/.replit-artifact/artifact.toml
+
+El workspace usa:
+
+router = "application"
+
+Por eso solamente puede mostrar artefactos registrados.
+
+La sección [[ports]] no es compatible con este workspace y no debe utilizarse.
+
+Actualmente el artefacto api-server debe ejecutar la aplicación Python ubicada en:
+
+artifacts/molpredict-api/app/main.py
+
+El repositorio Git ya está conectado a:
+
+ibanezmariaela78-lab/molpredict-egfr-api
+
+==================================================
+OBJETIVO FINAL
+==================================================
+
+Dejar funcionando una API pública de demostración que:
+
+- arranque correctamente en Replit;
+- aparezca en Preview;
+- tenga documentación Swagger;
+- procese química real con RDKit;
+- mantenga la predicción EGFR claramente marcada como demostrativa;
+- pueda ser consumida posteriormente por Lovable;
+- tenga CORS correctamente configurado;
+- pase todos los tests;
+- no mezcle el wrapper Node con el backend Python;
+- quede preparada para publicar, pero sin publicar automáticamente.
+
+No declares terminado el trabajo hasta cumplir todas las verificaciones indicadas.
+
+==================================================
+1. CONSERVAR LA ESTRUCTURA
+==================================================
+
+No mover ni renombrar:
+
+artifacts/molpredict-api
+artifacts/api-server
+
+No eliminar:
+
+- FastAPI;
+- RDKit;
+- datos demostrativos;
+- tests existentes;
+- documentación Swagger;
+- archivos de configuración necesarios de Replit;
+- configuración Git;
+- .env.example;
+- README.
+
+No crear otro backend.
+
+No crear otro artefacto.
+
+No crear frontend React.
+
+No crear una aplicación Express alternativa.
+
+No agregar Supabase.
+
+No agregar base de datos.
+
+No agregar autenticación.
+
+No agregar AWS.
+
+No entrenar todavía un modelo QSAR.
+
+No inventar métricas científicas.
+
+No reemplazar cálculos reales de RDKit por valores simulados.
+
+==================================================
+2. CONFIGURAR EL ARTEFACTO DE REPLIT
+==================================================
+
+Reutilizá el artefacto existente:
+
+artifacts/api-server
+
+Configurá correctamente:
+
+artifacts/api-server/.replit-artifact/artifact.toml
+
+Debe representar una API y utilizar:
+
+kind = "api"
+previewPath = "/"
+
+El servicio debe exponer el puerto local 8000.
+
+El comando de desarrollo debe ejecutar:
+
+cd artifacts/molpredict-api && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+
+El comando de producción debe ejecutar exactamente la misma aplicación FastAPI utilizando el puerto proporcionado por Replit.
+
+No usar un puerto fijo si existe la variable PORT.
+
+El health check de startup debe utilizar:
+
+/health
+
+Asegurate de que el artefacto api-server quede registrado en el router de la aplicación y pueda mostrarse en Preview.
+
+No agregues una sección [[ports]] al archivo .replit.
+
+Eliminá solamente configuraciones antiguas que entren en conflicto directo con este artefacto.
+
+No elimines configuraciones útiles del workspace.
+
+==================================================
+3. RUTAS OBLIGATORIAS
+==================================================
+
+Confirmá que existan exactamente estas rutas:
+
+GET /
+GET /health
+GET /docs
+GET /redoc
+
+POST /api/v1/molecules/validate
+POST /api/v1/molecules/descriptors
+POST /api/v1/molecules/render
+POST /api/v1/predictions/egfr
+POST /api/v1/similarity/search
+
+GET /api/v1/models/current
+GET /api/v1/models/metrics
+GET /api/v1/dataset/summary
+
+La ruta raíz GET / debe responder HTTP 200 con:
+
+{
+  "service": "MolPredict EGFR API",
+  "status": "running",
+  "version": "0.1.0",
+  "docs": "/docs",
+  "health": "/health",
+  "prediction_mode": "demo"
+}
+
+GET /health debe responder HTTP 200 e incluir como mínimo:
+
+{
+  "status": "ok",
+  "service": "molpredict-egfr-api",
+  "version": "0.1.0",
+  "environment": "development",
+  "demo_mode": true,
+  "rdkit_available": true
+}
+
+No dupliques prefijos como:
+
+/api/v1/api/v1
+
+No cambies los nombres de los endpoints que el frontend ya tiene preparados.
+
+==================================================
+4. RDKit Y QUÍMICA REAL
+==================================================
+
+Confirmá que RDKit pueda importarse correctamente en Replit.
+
+Revisá todos los imports y utilizá formas válidas, por ejemplo:
+
+from rdkit import Chem
+
+No utilizar:
+
+from rdkit.Chem import Chem
+
+Confirmá que las siguientes funciones continúen usando RDKit real:
+
+- validación de SMILES;
+- canonicalización;
+- fórmula molecular;
+- peso molecular;
+- LogP;
+- TPSA;
+- donantes de hidrógeno;
+- aceptores de hidrógeno;
+- enlaces rotables;
+- anillos aromáticos;
+- fracción Csp3;
+- generación SVG 2D;
+- fingerprints Morgan;
+- similitud Tanimoto.
+
+No crear resultados químicos falsos como fallback.
+
+Si RDKit no está disponible:
+
+- registrar un error claro;
+- responder 503 en funciones dependientes de RDKit;
+- no devolver resultados químicos simulados como si fueran reales.
+
+Asegurate de que /health informe correctamente si RDKit está disponible.
+
+==================================================
+5. PREDICCIÓN DEMOSTRATIVA
+==================================================
+
+Mantener la predicción EGFR en modo demostración.
+
+Toda respuesta de:
+
+POST /api/v1/predictions/egfr
+
+debe indicar explícitamente:
+
+prediction_mode = "demo"
+scientifically_validated = false
+
+No afirmar que existe un modelo QSAR entrenado.
+
+No inventar métricas.
+
+Mantener matemáticamente correcta la conversión:
+
+IC50_nM = 10 ** (9 - pIC50)
+
+Mantener consistencia entre pIC50 e IC50 en todas las respuestas.
+
+Los endpoints del modelo deben seguir indicando que el modelo no está entrenado ni validado.
+
+==================================================
+6. CORREGIR CORS DE FORMA SEGURA
+==================================================
+
+Revisá:
+
+artifacts/molpredict-api/app/core/config.py
+artifacts/molpredict-api/app/main.py
+
+Conservar la variable:
+
+CORS_ORIGINS
+
+Agregar o conservar:
+
+CORS_ALLOW_CREDENTIALS
+
+Aplicar exactamente esta lógica:
+
+- CORS_ORIGINS se interpreta como una lista separada por comas.
+- Eliminar espacios y elementos vacíos.
+- Si no hay orígenes válidos, utilizar ["*"].
+- Si la lista contiene "*", usar siempre allow_credentials=False.
+- Una variable CORS_ALLOW_CREDENTIALS=true nunca debe activar credenciales cuando el origen sea "*".
+- Con orígenes explícitos, permitir credenciales solamente cuando CORS_ALLOW_CREDENTIALS=true.
+- El valor por defecto debe ser false.
+
+Configuración inicial para esta API pública de demostración:
+
+CORS_ORIGINS=*
+CORS_ALLOW_CREDENTIALS=false
+
+Esto debe permitir solicitudes del frontend sin cookies ni autenticación.
+
+No hardcodear todavía un dominio específico de Lovable.
+
+Mantener:
+
+allow_methods=["*"]
+allow_headers=["*"]
+
+Crear propiedades completas y funcionales, sin referencias a atributos inexistentes.
+
+Por ejemplo, la configuración debe exponer de manera coherente:
+
+cors_origins_list
+cors_is_wildcard
+cors_allow_credentials
+
+No dejar cambios parciales.
+
+==================================================
+7. MANEJO DE ERRORES
+==================================================
+
+Mantener los manejadores de errores existentes.
+
+Asegurate de que:
+
+- SMILES inválido no produzca un error 500;
+- campos faltantes devuelvan 422;
+- RDKit no disponible devuelva 503;
+- errores internos devuelvan un mensaje seguro;
+- no se expongan stack traces al cliente;
+- los logs mantengan información suficiente para diagnóstico.
+
+No ocultar errores durante los tests.
+
+==================================================
+8. TESTS
+==================================================
+
+Conservar todos los tests existentes.
+
+Agregar tests específicos de CORS para comprobar:
+
+1. CORS_ORIGINS=* produce:
+   - allow_origins=["*"];
+   - allow_credentials=False.
+
+2. CORS_ALLOW_CREDENTIALS=true no activa credenciales cuando existe wildcard.
+
+3. Una lista explícita como:
+
+https://app.example.com,https://staging.example.com
+
+se convierte correctamente en dos orígenes.
+
+4. Con orígenes explícitos y CORS_ALLOW_CREDENTIALS=true:
+   - allow_credentials=True.
+
+5. Un preflight OPTIONS desde:
+
+https://example.lovable.app
+
+funciona cuando CORS_ORIGINS=*.
+
+6. La respuesta wildcard no contiene:
+
+access-control-allow-credentials: true
+
+7. La aplicación sigue arrancando después del cambio.
+
+Ejecutá desde:
+
+artifacts/molpredict-api
+
+el comando:
+
+python -m pytest tests -v --tb=short
+
+No declares los tests correctos sin ejecutarlos realmente.
+
+Si algún test falla:
+
+- mostrar el error;
+- corregir únicamente la causa real;
+- volver a ejecutar la suite completa.
+
+El resultado final debe ser:
+
+0 failed
+
+==================================================
+9. PRUEBAS INTERNAS OBLIGATORIAS
+==================================================
+
+Después de iniciar el servidor, probá internamente utilizando el puerto real:
+
+curl http://localhost:$PORT/
+
+curl http://localhost:$PORT/health
+
+curl -I http://localhost:$PORT/docs
+
+curl http://localhost:$PORT/api/v1/models/current
+
+curl http://localhost:$PORT/api/v1/models/metrics
+
+curl http://localhost:$PORT/api/v1/dataset/summary
+
+Probá validación molecular con:
+
+POST /api/v1/molecules/validate
+
+Body:
+
+{
+  "smiles": "CCO"
+}
+
+Probá descriptores con:
+
+POST /api/v1/molecules/descriptors
+
+Body:
+
+{
+  "smiles": "CCO"
+}
+
+Probá renderizado SVG con:
+
+POST /api/v1/molecules/render
+
+Body:
+
+{
+  "smiles": "CCO",
+  "width": 500,
+  "height": 350
+}
+
+Probá predicción EGFR con:
+
+POST /api/v1/predictions/egfr
+
+Body:
+
+{
+  "smiles": "CCO"
+}
+
+Probá similitud con el body exacto que exige el esquema actual.
+
+Confirmá:
+
+- respuestas HTTP correctas;
+- JSON válido;
+- SVG válido;
+- valores químicos de RDKit;
+- prediction_mode=demo;
+- scientifically_validated=false;
+- pIC50 e IC50 consistentes.
+
+Probá también un SMILES inválido y confirmá que no produzca 500.
+
+==================================================
+10. PREFLIGHT DE LOVABLE
+==================================================
+
+Ejecutá una prueba OPTIONS equivalente a:
+
+curl -i -X OPTIONS \
+  http://localhost:$PORT/api/v1/molecules/validate \
+  -H "Origin: https://example.lovable.app" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: content-type"
+
+Confirmá:
+
+- respuesta exitosa;
+- Access-Control-Allow-Origin compatible;
+- ausencia de credenciales cuando el origen configurado es "*".
+
+==================================================
+11. PREVIEW
+==================================================
+
+Reiniciá correctamente el artefacto api-server.
+
+La pestaña Preview debe dejar de mostrar:
+
+Nothing to preview yet
+
+Preview debe mostrar en la ruta / el JSON de estado del servicio.
+
+Después comprobá en Preview:
+
+/
+ /health
+ /docs
+ /redoc
+
+No declares terminado hasta que /docs muestre Swagger y /health responda correctamente desde la URL de Preview, no solamente desde localhost.
+
+Mostrame la URL exacta de Preview y las rutas que debo abrir.
+
+==================================================
+12. DOCUMENTACIÓN
+==================================================
+
+Actualizar únicamente la documentación necesaria dentro de:
+
+artifacts/molpredict-api/README.md
+artifacts/molpredict-api/.env.example
+
+README debe explicar claramente:
+
+- qué partes usan RDKit real;
+- qué parte es demostrativa;
+- que no existe todavía un modelo QSAR entrenado;
+- estructura del proyecto;
+- cómo ejecutar localmente;
+- variables de entorno;
+- endpoints;
+- cómo ejecutar tests;
+- advertencia científica;
+- cómo conectar posteriormente Lovable.
+
+.env.example debe incluir como mínimo:
+
+APP_ENV=development
+PORT=8000
+DEMO_MODE=true
+CORS_ORIGINS=*
+CORS_ALLOW_CREDENTIALS=false
+MODEL_VERSION=demo-v0.1
+
+No incluir secretos reales.
+
+Eliminar de la documentación referencias obsoletas a rutas o servicios que no existen.
+
+==================================================
+13. LIMPIEZA CONTROLADA
+==================================================
+
+No elimines archivos solo porque parezcan innecesarios.
+
+El código TypeScript de api-server no debe interceptar ni reemplazar la API FastAPI.
+
+Si ese código no se utiliza en el artefacto de producción:
+
+- dejarlo aislado;
+- documentar que el artefacto inicia Python;
+- no intentar iniciar Express simultáneamente.
+
+No modificar el frontend mockup-sandbox.
+
+No mover el backend a la raíz.
+
+No cambiar la estructura antes de terminar de verificar Replit.
+
+==================================================
+14. PREPARACIÓN PARA PUBLICAR
+==================================================
+
+Dejar el artefacto preparado para publicación en Replit.
+
+Verificar:
+
+- comando de producción;
+- uso de PORT;
+- health check;
+- dependencias instalables;
+- ausencia de rutas absolutas locales;
+- ausencia de secretos escritos en código;
+- Swagger accesible;
+- CORS compatible con Lovable;
+- inicio limpio del servidor.
+
+No presionar Publish.
+
+No crear un deployment automáticamente.
+
+No generar gastos.
+
+Solamente indicar al final qué botón debo presionar para publicar después de revisar los resultados.
+
+==================================================
+15. GIT
+==================================================
+
+No hacer push automático a GitHub.
+
+No abrir Pull Request.
+
+No crear una rama nueva.
+
+No hacer merge.
+
+Podés crear un checkpoint interno de Replit.
+
+Al finalizar, indicame exactamente qué archivos cambiaron para poder revisarlos antes de hacer commit y push manualmente.
+
+==================================================
+ENTREGA FINAL OBLIGATORIA
+==================================================
+
+Al terminar, mostrame en una sola respuesta:
+
+1. Causa concreta del problema de Preview.
+2. Archivos modificados.
+3. Configuración final del artefacto api-server.
+4. Comando exacto de desarrollo.
+5. Comando exacto de producción.
+6. Puerto utilizado.
+7. Lista completa de rutas encontradas.
+8. Resultado exacto de pytest:
+   - cantidad de tests;
+   - cantidad aprobada;
+   - cantidad fallida.
+9. Resultado de las pruebas curl.
+10. Resultado de la prueba CORS.
+11. Confirmación de que RDKit está disponible.
+12. Confirmación de que la predicción continúa siendo demo.
+13. URL de Preview.
+14. Confirmación de que /, /health y /docs funcionan desde Preview.
+15. Variables de entorno necesarias.
+16. Instrucción exacta para publicar posteriormente.
+17. Confirmación de que no publicaste, no hiciste push y no conectaste Lovable.
+
+No declares terminado si existe algún error pendiente.
+
+No propongas autenticación, frontend, AWS, Supabase, base de datos ni entrenamiento QSAR como siguiente tarea.
+
+La única tarea es finalizar, probar y dejar publicable el backend actual.

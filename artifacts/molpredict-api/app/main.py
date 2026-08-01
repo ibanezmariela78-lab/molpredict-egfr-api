@@ -51,11 +51,10 @@ app = FastAPI(
 )
 
 # ── CORS ────────────────────────────────────────────────────────────────────
-cors_origins = settings.cors_origins_list
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=settings.cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -63,14 +62,17 @@ app.add_middleware(
 # ── Manejadores globales de excepciones ─────────────────────────────────────
 register_exception_handlers(app)
 
+
 # ── Ruta raíz ───────────────────────────────────────────────────────────────
 @app.get("/", tags=["Root"])
 async def root() -> dict:
     return {
         "service": "MolPredict EGFR API",
         "status": "running",
+        "version": settings.VERSION,
         "docs": "/docs",
         "health": "/health",
+        "prediction_mode": "demo",
     }
 
 

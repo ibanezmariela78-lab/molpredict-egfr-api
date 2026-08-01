@@ -10,7 +10,7 @@ name = "API Server"
 paths = ["/"]
 
 [services.development]
-run = "cd artifacts/molpredict-api && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
+run = "cd /home/runner/workspace/artifacts/molpredict-api && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
 
 [services.production]
 
@@ -18,10 +18,7 @@ run = "cd artifacts/molpredict-api && uvicorn app.main:app --host 0.0.0.0 --port
 args = ["echo", "no-build"]
 
 [services.production.run]
-args = ["bash", "-c", "cd artifacts/molpredict-api && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
-
-[services.production.run.env]
-PORT = "8000"
+args = ["bash", "-c", "cd /home/runner/workspace/artifacts/molpredict-api && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
 
 [services.production.health.startup]
 path = "/health"

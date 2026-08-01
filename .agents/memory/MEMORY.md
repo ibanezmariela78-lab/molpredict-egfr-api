@@ -1,0 +1,1 @@
+- [MolPredict routing architecture](molpredict-routing.md) — Python FastAPI must run via api-server artifact (absolute path); standalone workflows are invisible to application router.
