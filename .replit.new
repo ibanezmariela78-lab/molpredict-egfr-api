@@ -24,18 +24,7 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
-packages = [
-  "cairo",
-  "catch2",
-  "comic-neue",
-  "coordgenlibs",
-  "eigen",
-  "glibcLocales",
-  "inchi",
-  "libxcrypt",
-  "maeparser",
-  "rapidjson",
-]
+packages = ["cairo", "catch2", "comic-neue", "coordgenlibs", "eigen", "glibcLocales", "inchi", "libxcrypt", "maeparser", "rapidjson"]
 
 [workflows]
 runButton = "Project"
