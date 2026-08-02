@@ -24,3 +24,27 @@ timeoutMs = 20000
 [nix]
 channel = "stable-25_05"
 packages = ["cairo", "catch2", "comic-neue", "coordgenlibs", "eigen", "glibcLocales", "inchi", "libxcrypt", "maeparser", "rapidjson"]
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "MolPredict EGFR API"
+
+[[workflows.workflow]]
+name = "MolPredict EGFR API"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd /home/runner/workspace/artifacts/molpredict-api && /home/runner/workspace/.pythonlibs/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000"
+waitForPort = 8000
+
+[workflows.workflow.metadata]
+outputType = "webview"
