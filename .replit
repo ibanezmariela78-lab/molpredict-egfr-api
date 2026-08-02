@@ -1,5 +1,6 @@
 modules = ["nodejs-24", "python-base-3.13"]
-
+[[artifacts]]
+id = "artifacts/api-server"
 [deployment]
 router = "application"
 deploymentTarget = "autoscale"
@@ -30,4 +31,15 @@ timeoutMs = 20000
 
 [nix]
 channel = "stable-25_05"
-packages = ["cairo", "catch2", "comic-neue", "coordgenlibs", "eigen", "glibcLocales", "inchi", "libxcrypt", "maeparser", "rapidjson"]
+packages = [
+  "cairo",
+  "catch2",
+  "comic-neue",
+  "coordgenlibs",
+  "eigen",
+  "glibcLocales",
+  "inchi",
+  "libxcrypt",
+  "maeparser",
+  "rapidjson",
+]
