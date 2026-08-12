@@ -1,4 +1,6 @@
 # 🧬 MolPredict EGFR API
+<img width="1438" height="777" alt="Captura de pantalla 2026-08-12 204117" src="https://github.com/user-attachments/assets/4fd3ec8a-745e-445d-8c55-9f6379b32334" />
+
 
 Backend REST desarrollado con **FastAPI + RDKit** para el procesamiento molecular de la plataforma **MolPredict EGFR**.
 
